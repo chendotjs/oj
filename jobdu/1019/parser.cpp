@@ -9,7 +9,7 @@ using namespace std;
 
 /**
 expr ::= term +|- expr | term
-term ::= num * num | num / num | num
+term ::= num * term | num / term | num
 num ::= [0-9]*
 */
 
@@ -22,6 +22,7 @@ example:
 char expression[250];
 int length;
 enum { Operator, Number };
+int currentPointer = 0;
 
 typedef struct lexEle {
   int type;
@@ -32,6 +33,7 @@ typedef struct lexEle {
 } lexEle;
 
 std::vector<lexEle> lexVector;
+int lexSize;
 
 void lexer(char *expression) {
   for (int i = 0; i < length; i++) {
@@ -55,15 +57,63 @@ void lexer(char *expression) {
       lexVector.push_back(ele);
     }
   }
+  lexSize = lexVector.size();
 #if 1
   traverse(lexVector) {
-    if(it->type == Operator) {
+    if (it->type == Operator) {
       printf("%c\n", it->content.op);
     } else {
       printf("%d\n", it->content.num);
     }
   }
 #endif
+}
+
+typedef struct ASTNode {
+  char op;
+  int num;
+  ASTNode *lchild;
+  ASTNode *rchild;
+} ASTNode;
+
+ASTNode *num(int index) {
+  ASTNode *nodePtr = new ASTNode();
+  if (index >= lexSize)
+    return NULL;
+  if (lexVector[index].type == Number) {
+    nodePtr->num = lexVector[index].content.num;
+    nodePtr->op = ' ';
+    nodePtr->lchild = nodePtr->rchild = NULL;
+    currentPointer++;
+  }
+  return nodePtr;
+}
+
+ASTNode *term(int index) {
+  ASTNode *nodePtr = new ASTNode();
+
+  if (index + 1 < lexSize && lexVector[index + 1].type == Operator &&
+      (lexVector[index + 1].content.op == '*' ||
+       lexVector[index + 1].content.op == '/')) {
+    nodePtr->lchild = num(index);
+    nodePtr->op = lexVector[index + 1].content.op;
+    currentPointer++;
+    nodePtr->rchild = term(index + 2);
+  } else {
+    nodePtr = num(index);
+  }
+  return nodePtr;
+}
+
+ASTNode *expr(int index) {
+  ASTNode *nodePtr = new ASTNode();
+  nodePtr = term(index);
+  return nodePtr;
+}
+
+ASTNode *parser(std::vector<lexEle> &lexVector) {
+  currentPointer = 0;
+  return expr(currentPointer);
 }
 
 int main() {
@@ -74,5 +124,7 @@ int main() {
     if (expression[0] == '0' && length == 1)
       return 0;
     lexer(expression);
+    ASTNode *root = parser(lexVector);
+    printf("%ld\n", root);
   }
 }
