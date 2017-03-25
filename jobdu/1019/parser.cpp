@@ -23,14 +23,12 @@ char expression[250];
 int length;
 enum { Operator, Number };
 
-typedef union lexContent {
-  char op;
-  int num;
-} lexContent;
-
 typedef struct lexEle {
   int type;
-  lexContent content;
+  union {
+    char op;
+    int num;
+  } content;
 } lexEle;
 
 std::vector<lexEle> lexVector;
@@ -42,12 +40,9 @@ void lexer(char *expression) {
       continue;
     else if (currentChar == '+' || currentChar == '-' || currentChar == '*' ||
              currentChar == '/') {
-      lexContent content;
-      content.op = currentChar;
-      lexEle ele = {Operator, content};
+      lexEle ele = {Operator, currentChar};
       lexVector.push_back(ele);
     } else if (currentChar >= '0' && currentChar <= '9') {
-      lexContent content;
       // transform to number
       char *endptr = NULL;
       int number = strtod(expression + i, &endptr);
@@ -56,8 +51,7 @@ void lexer(char *expression) {
       }
       i--;
 
-      content.num = number;
-      lexEle ele = {Number, content};
+      lexEle ele = {Number, number};
       lexVector.push_back(ele);
     }
   }
