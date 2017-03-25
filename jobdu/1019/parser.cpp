@@ -58,7 +58,7 @@ void lexer(char *expression) {
     }
   }
   lexSize = lexVector.size();
-#if 1
+#if 0
   traverse(lexVector) {
     if (it->type == Operator) {
       printf("%c\n", it->content.op);
@@ -106,14 +106,76 @@ ASTNode *term(int index) {
 }
 
 ASTNode *expr(int index) {
-  ASTNode *nodePtr = new ASTNode();
-  nodePtr = term(index);
+  ASTNode *nodePtr;
+  ASTNode *termPtr = term(index);
+  if (currentPointer < lexSize && lexVector[currentPointer].type == Operator &&
+      (lexVector[currentPointer].content.op == '+' ||
+       lexVector[currentPointer].content.op == '-')) {
+    nodePtr = new ASTNode();
+    nodePtr->lchild = termPtr;
+    nodePtr->op = lexVector[currentPointer].content.op;
+    currentPointer++;
+    nodePtr->rchild = expr(currentPointer);
+  } else {
+    nodePtr = termPtr;
+  }
+
   return nodePtr;
 }
 
 ASTNode *parser(std::vector<lexEle> &lexVector) {
   currentPointer = 0;
   return expr(currentPointer);
+}
+
+/**
+为了避免左递归，生成的语法树和普通的运算顺序是相悖的，比如3-4+5
+    -
+  /  \
+3    +
+    / \
+  4    5
+在generator中做了一些处理
+*/
+double generator(ASTNode *root, char previousOP, bool rchild) {
+  if (root->op != '+' && root->op != '-' && root->op != '*' &&
+      root->op != '/') {
+    return (double)root->num;
+  }
+  switch (root->op) {
+  case '+': {
+    if (previousOP == '-' && rchild) {
+      return generator(root->lchild, root->op, false) -
+             generator(root->rchild, root->op, true);
+    }
+    return generator(root->lchild, root->op, false) +
+           generator(root->rchild, root->op, true);
+  }
+  case '-': {
+    if (previousOP == '-' && rchild) {
+      return generator(root->lchild, root->op, false) +
+             generator(root->rchild, root->op, true);
+    }
+    return generator(root->lchild, root->op, false) -
+           generator(root->rchild, root->op, true);
+  }
+  case '*': {
+    if (previousOP == '/' && rchild) {
+      return generator(root->lchild, root->op, false) /
+             generator(root->rchild, root->op, true);
+    }
+    return generator(root->lchild, root->op, false) *
+           generator(root->rchild, root->op, true);
+  }
+  case '/': {
+    if (previousOP == '/' && rchild) {
+      return generator(root->lchild, root->op, false) *
+             generator(root->rchild, root->op, true);
+    }
+    return generator(root->lchild, root->op, false) /
+           generator(root->rchild, root->op, true);
+  }
+  }
 }
 
 int main() {
@@ -123,8 +185,11 @@ int main() {
     length--;
     if (expression[0] == '0' && length == 1)
       return 0;
+    currentPointer = 0;
+    lexVector.clear();
     lexer(expression);
     ASTNode *root = parser(lexVector);
-    printf("%ld\n", root);
+
+    printf("%.2lf\n", generator(root, ' ', false));
   }
 }
