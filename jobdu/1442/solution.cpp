@@ -25,17 +25,17 @@ long long geo(long long a, long long m, long long k) {
 }
 
 int main() {
-  scanf("%d", &N);
-  long long a, b, c, k;
-  long long int ans;
-  for (int i = 0; i < N; i++) {
-    scanf("%lld%lld%lld%lld", &a, &b, &c, &k);
-    if (a + c == b + b)
-      ans = arith(a, b - a, k);
-    else
-      ans = geo(a, b / a, k);
-    printf("%lld\n", ans);
+  while (scanf("%d", &N) != EOF) {
+    long long a, b, c, k;
+    long long int ans;
+    for (int i = 0; i < N; i++) {
+      scanf("%lld%lld%lld%lld", &a, &b, &c, &k);
+      if (a + c == b + b)
+        ans = arith(a, b - a, k);
+      else
+        ans = geo(a, b / a, k);
+      printf("%lld\n", ans);
+    }
   }
-
   return 0;
 }
