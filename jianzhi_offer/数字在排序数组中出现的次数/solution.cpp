@@ -55,7 +55,7 @@ public:
 
 int main(int argc, char const *argv[]) {
   {
-    vector<int> vec ={1,2,3,3,3,3,4,5};
+    vector<int> vec = {1, 2, 3, 3, 3, 3, 4, 5};
     cout << Solution().GetNumberOfK(vec, 3) << endl;
   }
   return 0;
